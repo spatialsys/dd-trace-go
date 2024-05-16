@@ -78,6 +78,7 @@ func (r *Router) SkipClean(value bool) *Router {
 // For eg. "/path/foo%2Fbar/to" will match the path "/path/foo/bar/to"
 func (r *Router) UseEncodedPath() *Router {
 	r.Router.UseEncodedPath()
+	r.config.finishOpts = append(r.config.finishOpts, tracer.StackFrames(20, 3))
 	return r
 }
 

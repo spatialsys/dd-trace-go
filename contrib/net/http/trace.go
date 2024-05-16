@@ -9,6 +9,7 @@ package http // import "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
 
 import (
 	"net/http"
+	"strconv"
 
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/internal/httptrace"
 	"gopkg.in/DataDog/dd-trace-go.v1/contrib/internal/options"
@@ -67,7 +68,15 @@ func TraceAndServe(h http.Handler, w http.ResponseWriter, r *http.Request, cfg *
 	span, ctx := httptrace.StartRequestSpan(r, opts...)
 	rw, ddrw := wrapResponseWriter(w)
 	defer func() {
-		httptrace.FinishRequestSpan(span, ddrw.status, cfg.FinishOpts...)
+		var statusStr string
+		if ddrw.status == 0 {
+			statusStr = "200"
+		} else {
+			statusStr = strconv.Itoa(ddrw.status)
+		}
+		span.SetTag(ext.HTTPCode, statusStr)
+		// temporary workaround for https://github.com/DataDog/dd-trace-go/issues/2390
+		span.Finish(cfg.FinishOpts...)
 	}()
 
 	if appsec.Enabled() {
